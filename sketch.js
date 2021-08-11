@@ -1,32 +1,57 @@
+var garden,rabbit;
+var gardenImg,rabbitImg;
 
 function preload(){
-
-  seaImg = loadImage("sea.png");
-  shipImg1 = loadAnimation("ship-1.png","ship-2.png", "ship-3.png","ship-4.png"); 
+  gardenImg = loadImage("garden.png");
+  rabbitImg = loadImage("rabbit.png");
+  AppleImg=loadImage("apple.png");
+  orangeleaf=loadImage("orangeLeaf.png")
+  
 }
 
 function setup(){
   
   createCanvas(400,400);
-  background("blue");
+  
+// Moving background
+garden=createSprite(200,200);
+garden.addImage(gardenImg);
+//garden.velocityX=-3;
 
-  sea=createSprite(400,200);
-   sea.addImage(seaImg);
-   sea.velocityX = -5
-   sea.scale=0.3;
+//creating boy running
+rabbit = createSprite(180,340,30,30);
+rabbit.scale =0.09;
+rabbit.addImage(rabbitImg);
+}
 
-   ship = createSprite(130,200,30,30);
-   ship.addAnimation("movingShip",shipImg1);
-  ship.scale =0.25; }
 
-  function draw() {
-    background(0);
-     sea.velocityX = -3;
+function draw() {
+  background(0);
+ 
+  edges= createEdgeSprites();
 
-     if(sea.x < 0){
-        sea.x = sea.width/8;
-       } 
-     
-     drawSprites(); 
-    
+  rabbit.x=World.mouseX
+  rabbit.collide(edges);
+
+  createApples()
+  createOrangeleaf()
+
+  drawSprites();
+}
+function createApples(){
+ if (frameCount%80===0){
+ var Apple=createSprite(random(50,350),40,10,10);
+  Apple.addImage("fruits",AppleImg)
+  Apple.scale=0.1;
+  Apple.velocityY=3
+}
+}
+
+function createOrangeleaf(){
+  if (frameCount%60===0){
+  var orangeLeaf=createSprite(random(50,350),40,10,10);
+   orangeLeaf.addImage("fruits",orangeleaf)
+   orangeLeaf.scale=0.1;
+   orangeLeaf.velocityY=3
   }
+}
