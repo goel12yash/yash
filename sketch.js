@@ -1,154 +1,207 @@
-//Game States
-var PLAY=1;
-var END=0;
-var gameState=1;
+var PLAY = 1;
+var END = 0;
+var gameState = PLAY;
 
-var knife,fruit ,monster,fruitGroup,monsterGroup, score,r,randomFruit, position;
-var knifeImage , fruit1, fruit2 ,fruit3,fruit4, monsterImage, gameOverImage;
+var trex, trex_running, trex_collided;
+var ground, invisibleGround, groundImage;
+
+var cloudsGroup, cloudImage;
+var obstaclesGroup, obstacle1, obstacle2, obstacle3, obstacle4;
+var backgroundImg
+var score=0;
+var jumpSound, collidedSound;
+
+var gameOver, restart;
+
 
 function preload(){
+  jumpSound = loadSound("jump.wav")
+  collidedSound = loadSound("collided.wav")
   
-  knifeImage = loadImage("knife.png");
-  monsterImage = loadAnimation("alien1.png","alien2.png")
-  fruit1 = loadImage("fruit1.png");
-  fruit2 = loadImage("fruit2.png");
-  fruit3 = loadImage("fruit3.png");
-  fruit4 = loadImage("fruit4.png");
-  gameOverImage = loadImage("gameover.png");
+  backgroundImg = loadImage("backgroundImg.png")
+  sunAnimation = loadImage("sun.png");
+  
+  trex_running = loadAnimation("trex_2.png","trex_1.png","trex_3.png");
+  trex_collided = loadAnimation("trex_collided.png");
+  
+  groundImage = loadImage("ground.png");
+  
+  cloudImage = loadImage("cloud.png");
+  
+  obstacle1 = loadImage("obstacle1.png");
+  obstacle2 = loadImage("obstacle2.png");
+  obstacle3 = loadImage("obstacle3.png");
+  obstacle4 = loadImage("obstacle4.png");
+  
+  gameOverImg = loadImage("gameOver.png");
+  restartImg = loadImage("restart.png");
+}
 
- knifeSwooshsound=loadSound("knifeSwoosh.mp3");
-gameOversound.loadSound("gameover.mp3");
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  
+  sun = createSprite(width-50,100,10,10);
+  sun.addAnimation("sun", sunAnimation);
+  sun.scale = 0.1
+  
+  trex = createSprite(50,height-70,20,50);
+  
+  
+  trex.addAnimation("running", trex_running);
+  trex.addAnimation("collided", trex_collided);
+  trex.setCollider('circle',0,0,350)
+  trex.scale = 0.08
+  // trex.debug=true
+  
+  invisibleGround = createSprite(width/2,height-10,width,125);  
+  invisibleGround.shapeColor = "#f4cbaa";
+  
+  ground = createSprite(width/2,height,width,2);
+  ground.addImage("ground",groundImage);
+  ground.x = width/2
+  ground.velocityX = -(6 + 3*score/100);
+  
+  gameOver = createSprite(width/2,height/2- 50);
+  gameOver.addImage(gameOverImg);
+  
+  restart = createSprite(width/2,height/2);
+  restart.addImage(restartImg);
+  
+  gameOver.scale = 0.5;
+  restart.scale = 0.1;
+
+  gameOver.visible = false;
+  restart.visible = false;
+  
  
- function setup() {
-  createCanvas(600, 600);
+  // invisibleGround.visible =false
 
+  cloudsGroup = new Group();
+  obstaclesGroup = new Group();
   
-  
-  //creating sword
-   knife=createSprite(40,200,20,20);
-   knife.addImage(knifeImage);
-   knife.scale=0.7
-  
-  //set collider for sword
-  knife.setCollider("rectangle",0,0,40,40);
-
-  // Score variables and Groups
-  score=0;
-  fruitGroup=createGroup();
-  monsterGroup=createGroup();
-  
+  score = 0;
 }
 
 function draw() {
-  background("lightblue");
+  //trex.debug = true;
+  background(backgroundImg);
+  textSize(20);
+  fill("black")
+  text("Score: "+ score,30,50);
   
-
-
-
-
-  if(gameState===PLAY){
-    
-    //Call fruits and Monster function
-    fruits();
-    Monster();
-    
-    // Move sword with mouse
-    knife.y=World.mouseY;
-    knife.x=World.mouseX;
   
-    // Increase score if sword touching fruit
-    if(fruitGroup.isTouching(knife)){
-      fruitGroup.destroyEach();
-      score=score+2;
-      knifeSwooshsound.play();
+  if (gameState===PLAY){
+    score = score + Math.round(getFrameRate()/60);
+    ground.velocityX = -(6 + 3*score/100);
+    
+    if((touches.length > 0 || keyDown("SPACE")) && trex.y  >= height-120) {
+      jumpSound.play( )
+      trex.velocityY = -10;
+       touches = [];
     }
-    else
-    {
-    // Go to end state if sword touching enemy
-      if(monsterGroup.isTouching(knife)){
-        gameState=END;
-      //add gameover sound here
-      gameOversound.play();
-
-        fruitGroup.destroyEach();
-        monsterGroup.destroyEach();
-        fruitGroup.setVelocityXEach(0);
-        monsterGroup.setVelocityXEach(0);
-        
-        // Change the animation of sword to gameover and reset its position
-        knife.addImage(gameOverImage);
+    
+    trex.velocityY = trex.velocityY + 0.8
   
-        knife.scale=2;
-        knife.x=300;
-        knife.y=300;
-      }
+    if (ground.x < 0){
+      ground.x = ground.width/2;
+    }
+  
+    trex.collide(invisibleGround);
+    spawnClouds();
+    spawnObstacles();
+  
+    if(obstaclesGroup.isTouching(trex)){
+        collidedSound.play()
+        gameState = END;
     }
   }
+  else if (gameState === END) {
+    gameOver.visible = true;
+    restart.visible = true;
+    
+    //set velcity of each game object to 0
+    ground.velocityX = 0;
+    trex.velocityY = 0;
+    obstaclesGroup.setVelocityXEach(0);
+    cloudsGroup.setVelocityXEach(0);
+    
+    //change the trex animation
+    trex.changeAnimation("collided",trex_collided);
+    
+    //set lifetime of the game objects so that they are never destroyed
+    obstaclesGroup.setLifetimeEach(-1);
+    cloudsGroup.setLifetimeEach(-1);
+    
+    if(touches.length>0 || keyDown("SPACE")) {      
+      reset();
+      touches = []
+    }
   }
-
- 
+  
   
   drawSprites();
-  //Display score
-  textSize(25);
-  text("Score : "+ score,250,50);
 }
 
-
-function Monster(){
-  if(World.frameCount%200===0){
-    monster=createSprite(400,200,20,20);
-    monster.addAnimation("moving", monsterImage);
-    monster.y=Math.round(random(100,550));
-    //update below give line of code for increase monsterGroup speed by 10
-    monster.velocityX = -8;
-    monster.setLifetime=50;
+function spawnClouds() {
+  //write code here to spawn the clouds
+  if (frameCount % 60 === 0) {
+    var cloud = createSprite(width+20,height-300,40,10);
+    cloud.y = Math.round(random(100,220));
+    cloud.addImage(cloudImage);
+    cloud.scale = 0.5;
+    cloud.velocityX = -3;
     
-    monsterGroup.add(monster);
+     //assign lifetime to the variable
+    cloud.lifetime = 300;
+    
+    //adjust the depth
+    cloud.depth = trex.depth;
+    trex.depth = trex.depth+1;
+    
+    //add each cloud to the group
+    cloudsGroup.add(cloud);
+  }
+  
+}
+
+function spawnObstacles() {
+  if(frameCount % 60 === 0) {
+    var obstacle = createSprite(600,height-95,20,30);
+    obstacle.setCollider('circle',0,0,45)
+    // obstacle.debug = true
+  
+    obstacle.velocityX = -(6 + 3*score/100);
+    
+    //generate random obstacles
+    var rand = Math.round(random(1,2));
+    switch(rand) {
+      case 1: obstacle.addImage(obstacle1);
+              break;
+      case 2: obstacle.addImage(obstacle2);
+              break;
+      default: break;
+    }
+    
+    //assign scale and lifetime to the obstacle           
+    obstacle.scale = 0.3;
+    obstacle.lifetime = 300;
+    obstacle.depth = trex.depth;
+    trex.depth +=1;
+    //add each obstacle to the group
+    obstaclesGroup.add(obstacle);
   }
 }
 
-function fruits(){
-  if(World.frameCount%80===0){
-    position = Math.round(random(1,2));
-    fruit=createSprite(400,200,20,20);
-    
-     //using random variable change the position of fruit, to make it more challenging
-    
-    if(position==1)
-    {
-    fruit.x=600;
-    //update below give line of code for increase fruitGroup speed by 4
-    fruit.velocityX=-7
-    }
-    else
-    {
-      if(position==2){
-      fruit.x=0;
-      
-     //update below give line of code for increase fruitGroup speed by 4
-      fruit.velocityX= 7;
-      }
-    }
-    
-    fruit.scale=0.2;
-     //fruit.debug=true;
-     r=Math.round(random(1,4));
-    if (r == 1) {
-      fruit.addImage(fruit1);
-    } else if (r == 2) {
-      fruit.addImage(fruit2);
-    } else if (r == 3) {
-      fruit.addImage(fruit3);
-    } else {
-      fruit.addImage(fruit4);
-    }
-    
-    fruit.y=Math.round(random(50,550));
-   
-    
-    fruit.setLifetime=100;
-    
-    fruitGroup.add(fruit);
-  }
+function reset(){
+  gameState = PLAY;
+  gameOver.visible = false;
+  restart.visible = false;
+  
+  obstaclesGroup.destroyEach();
+  cloudsGroup.destroyEach();
+  
+  trex.changeAnimation("running",trex_running);
+  
+  score = 0;
+  
 }
