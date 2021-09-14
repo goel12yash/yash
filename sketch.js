@@ -50,7 +50,7 @@ function draw() {
   edges= createEdgeSprites();
   boy.collide(edges);
   boy.setCollider('circle',0,0,350);
-  boy.debug=true
+ // boy.debug=true
   
   //code to reset the background
   if(path.y > height ){
