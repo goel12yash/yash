@@ -1,110 +1,53 @@
-var bg,sleep, brush, gym, eat, bath, move;
-var astronaut;
+const Engine = Matter.Engine;
+const World = Matter.World;
+const Bodies = Matter.Bodies;
+const Constraint = Matter.Constraint;
 
-function preload(){
-  bg= loadImage("images/iss.png");
-  sleep = loadAnimation("images/sleep.png");
-  brush = loadAnimation("images/brush.png");
-  gym = loadAnimation("images/gym1.png","images/gym1.png","images/gym2.png","images/gym2.png");
-  eat = loadAnimation("images/eat1.png","images/eat1.png","images/eat1.png","images/eat2.png","images/eat2.png","images/eat2.png");
-  bath = loadAnimation("images/bath1.png","images/bath1.png","images/bath1.png","images/bath2.png","images/bath2.png","images/bath2.png");
- move = loadAnimation("images/move1.png","images/move1.png","images/move2.png","images/move2.png");
+var engine, world, backgroundImg;
+var canvas, angle, tower, ground, cannon;
+var cannonBall;
+var balls=[]
+
+function preload() {
+  backgroundImg = loadImage("./assets/background.gif");
+  towerImage = loadImage("./assets/tower.png");
 }
 
 function setup() {
-  createCanvas(600, 500);
-  
-  astronaut = createSprite(300,230);
-  astronaut.addAnimation("sleeping", sleep);
-  astronaut.scale = 0.1;
-  
+  canvas = createCanvas(1200, 600);
+  engine = Engine.create();
+  world = engine.world;
+  angleMode(DEGREES); 
+  angle = 15
+
+  ground = Bodies.rectangle(0, height - 1, width * 2, 1, { isStatic: true });
+  World.add(world, ground);
+
+  tower = Bodies.rectangle(160, 350, 160, 310, { isStatic: true });
+  World.add(world, tower);
+
+  cannon = new Cannon(180, 110, 130, 100, angle);
+  cannonBall = new CannonBall(cannon.x, cannon.y);
 }
 
 function draw() {
-  background(bg);
-  drawSprites();
+  background(189);
+  image(backgroundImg, 0, 0, width, height);
 
-  textSize(20);
-  fill("white")
-  text("Instructions:",20, 35);
-  textSize(15);
-  text("Up Arrow = Brushing",20, 55);
-  text("Down Arrow = Gymming",20, 70);
-  text("Left Arrow = Eating",20, 85);
-  text("Right Arrow = Bathing",20, 100);
-  text("m key = Moving",20, 115);
-  
-  /*edges=createEdgeSprites();
-  astronautbounce.Off(edges);*/
+  Engine.update(engine);
 
- /* edges=createEdgeSprites();
-  astronaut.BounceOff(edges);*/
+  rect(ground.position.x, ground.position.y, width * 2, 1);
+  push();
+  imageMode(CENTER);
+  image(towerImage, tower.position.x, tower.position.y, 160, 310);
+  pop();
 
-  edges=createEdgeSprites();
-  astronaut.bounceOff(edges);
-
-  /*edges=createEdgeSprite();
-  astronaut.bounceOff(edges);*/
-  
-  if(keyDown("UP_ARROW")){
-    astronaut.addAnimation("brushing", brush);
-    astronaut.changeAnimation("brushing");
-    astronaut.y = 350;
-    astronaut.velocityX = 0;
-    astronaut.velocityY = 0;
-  }
-  
-  if(keyDown("DOWN_ARROW")){
-    astronaut.addAnimation("gymming", gym);
-    astronaut.changeAnimation("gymming");
-    astronaut.y = 350;
-    astronaut.velocityX = 0;
-    astronaut.velocityY = 0;
-  }
-  
-  if(keyDown("LEFT_ARROW")){
-    astronaut.addAnimation("eating", eat);
-    astronaut.changeAnimation("eating");
-    astronaut.x = 150;
-    astronaut.y = 350;
-    astronaut.velocityX = 0.5;
-    astronaut.velocityY = 0.5;
-  }
-  
-  if(keyDown("RIGHT_ARROW")){
-    astronaut.addAnimation("bathing", bath);
-    astronaut.changeAnimation("bathing");
-    astronaut.x = 300;
-    astronaut.velocityX = 0;
-    astronaut.velocityY = 0;
-  }
-
-  /*if(key Down("m")){
-    astronaut.addAnimation("moving", move);
-    astronaut.changeAnimation("moving");
-    astronaut.velocityX = 1;
-    astronaut.velocityY = 1;
-  }*/
-
-  /*if(keyDown("m")){
-    astronaut.addAnimation("moving", move);
-    astronaut.changeAnimation("moving");
-    astronaut.velocityX = 0;
-    astronaut.velocityY = 0;
-  }*/
-
-  /*if(keyDown("m")){
-    astronaut.changeAnimation("moving", move);
-    astronaut.changeAnimation("moving");
-    astronaut.velocityX = 1;
-    astronaut.velocityY = 1;
-  }*/
-
-  if(keyDown("m")){
-    astronaut.addAnimation("moving", move);
-    astronaut.changeAnimation("moving");
-    astronaut.velocityX = 1;
-    astronaut.velocityY = 1;
-  }
-
+  cannon.display();
+  cannonBall.display();
 }
+ function keyReleased(){
+if(keyCode===RIGHT_ARROW) {
+  var cannonBall=new CannonBall(cannon.x,cannon.y)
+  balls.push(cannonBall)
+}
+ }
